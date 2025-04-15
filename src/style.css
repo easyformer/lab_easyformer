@@ -1,0 +1,39 @@
+#app {
+    font-family: sans-serif;
+    padding: 20px;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+}
+
+.input-section, .output-section {
+    flex: 1;
+}
+
+textarea {
+    width: 100%;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    margin-bottom: 10px;
+}
+
+pre {
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    padding: 10px;
+    white-space: pre-wrap; /* Wrap long lines */
+    word-wrap: break-word; /* Break words if necessary */
+    min-height: 200px; /* Give the output area some initial height */
+    max-height: 400px; /* Prevent it from getting too large */
+    overflow-y: auto; /* Add scrollbar if content exceeds max-height */
+}
+
+code {
+    display: block; /* Ensure code block takes full width */
+}
+
+button {
+    padding: 8px 15px;
+    cursor: pointer;
+}
