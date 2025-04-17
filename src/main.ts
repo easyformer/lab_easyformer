@@ -33,6 +33,7 @@ let showRawMarkdown = false;
 let contextMenuTarget: string | null = null;
 let octokit: Octokit | null = null;
 let previousSubmissions: LabSubmission[] = [];
+let folderExpansionState: Map<string, boolean> = new Map(); // Added to store folder states
 
 // Define a type for lab submissions
 interface LabSubmission {
@@ -205,16 +206,22 @@ function updateFileList() {
             currentPath = currentPath ? `${currentPath}/${part}` : part;
             
             if (!current.children.has(part)) {
+                // Check stored state or default to false
+                const isExpanded = folderExpansionState.get(currentPath) ?? false;
                 current.children.set(part, {
                     name: part,
                     path: currentPath,
                     isDirectory: i < parts.length - 1 || file.isDirectory,
                     children: new Map(),
                     parent: current,
-                    isExpanded: false
+                    isExpanded: isExpanded // Use stored state
                 });
             }
             current = current.children.get(part)!;
+            // Ensure the isDirectory flag is correct even if the node already existed
+            if (current && (i < parts.length - 1 || file.isDirectory)) {
+                current.isDirectory = true;
+            }
         }
     });
 
@@ -255,6 +262,7 @@ function updateFileList() {
                     toggle.addEventListener('click', (e) => {
                         e.stopPropagation();
                         child.isExpanded = !child.isExpanded;
+                        folderExpansionState.set(child.path, child.isExpanded); // Save state
                         const childContainer = itemDiv.nextElementSibling as HTMLElement;
                         if (childContainer && childContainer.classList.contains('nested')) {
                             childContainer.style.display = child.isExpanded ? 'block' : 'none';
@@ -1015,6 +1023,14 @@ async function deployToPreprod() {
             };
         }))).filter((item): item is NonNullable<typeof item> => item !== undefined);
 
+        // Check if there are any files to commit
+        if (treeItems.length === 0) {
+            alert('Aucun fichier sélectionné ou modifié à déployer.');
+            deployBtn.disabled = false;
+            deployBtn.textContent = 'Envoyer';
+            return; // Stop deployment if no files
+        }
+
         const { data: tree } = await octokit!.rest.git.createTree({
             owner: 'easyformer',
             repo: 'lab_easyformer',
@@ -1131,13 +1147,16 @@ async function addAuthorSignatureToFiles(authorName: string, selectedPaths?: str
     // Loop through selected files and add signature
     for (const [path, file] of filesToProcess) {
         // Skip directories and non-markdown files
-        if (file.isDirectory || !path.toLowerCase().endsWith('.md')) {
+        if (file.isDirectory || !path.toLowerCase().endswith('.md')) {
             continue;
         }
         
+        // First remove any existing signature
+        file.content = file.content.replace(/\n\n<div style="text-align: right; font-style: italic; margin-top: 30px;">\n.*?\n<\/div>\s*$/, '');
+        
         // Add signature at the bottom of the file
         const signature = `\n\n<div style="text-align: right; font-style: italic; margin-top: 30px;">
-— Document créé par ${authorName}
+by ${authorName}
 </div>`;
         
         // Update file content
@@ -1238,6 +1257,9 @@ function showRevisionHistory() {
             
             content += `
                 <div class="revision-item" data-id="${submission.id}">
+                    <div class="revision-item-checkbox">
+                        <input type="checkbox" class="revision-checkbox" data-id="${submission.id}">
+                    </div>
                     <div class="revision-item-info">
                         <div class="revision-item-title">${submission.labName}</div>
                         <div class="revision-item-details">
@@ -1246,6 +1268,7 @@ function showRevisionHistory() {
                     </div>
                     <div class="revision-item-actions">
                         <button class="load-btn" data-id="${submission.id}">Restaurer</button>
+                        <button class="delete-btn" data-id="${submission.id}">Supprimer</button>
                     </div>
                 </div>
             `;
@@ -1255,6 +1278,10 @@ function showRevisionHistory() {
     content += `
             </div>
             <div class="dialog-buttons">
+                <div class="dialog-selection-buttons">
+                    <button id="selectAllBtn">Tout sélectionner</button>
+                    <button id="deleteSelectedBtn">Supprimer la sélection</button>
+                </div>
                 <button id="closeRevisionHistoryBtn">Fermer</button>
             </div>
         </div>
@@ -1262,6 +1289,18 @@ function showRevisionHistory() {
     
     dialog.innerHTML = content;
     document.body.appendChild(dialog);
+
+    // Function to delete revisions
+    function deleteRevisions(ids: string[]) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer ces révisions ? Cette action est irréversible.')) {
+            return;
+        }
+
+        previousSubmissions = previousSubmissions.filter(sub => !ids.includes(sub.id));
+        savePreviousSubmissions();
+        document.body.removeChild(dialog);
+        showRevisionHistory(); // Refresh the dialog
+    }
     
     // Add event listener for the close button
     const closeBtn = dialog.querySelector('#closeRevisionHistoryBtn');
@@ -1281,6 +1320,35 @@ function showRevisionHistory() {
                 }
             }
         });
+    });
+
+    // Add event listeners for individual delete buttons
+    const deleteBtns = dialog.querySelectorAll('.delete-btn');
+    deleteBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = (btn as HTMLElement).dataset.id;
+            if (id) {
+                deleteRevisions([id]);
+            }
+        });
+    });
+
+    // Add event listener for select all button
+    const selectAllBtn = dialog.querySelector('#selectAllBtn');
+    selectAllBtn?.addEventListener('click', () => {
+        const checkboxes = dialog.querySelectorAll('.revision-checkbox') as NodeListOf<HTMLInputElement>;
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+    });
+
+    // Add event listener for delete selected button
+    const deleteSelectedBtn = dialog.querySelector('#deleteSelectedBtn');
+    deleteSelectedBtn?.addEventListener('click', () => {
+        const checkedBoxes = dialog.querySelectorAll('.revision-checkbox:checked') as NodeListOf<HTMLInputElement>;
+        const selectedIds = Array.from(checkedBoxes).map(cb => cb.dataset.id).filter((id): id is string => id !== undefined);
+        if (selectedIds.length > 0) {
+            deleteRevisions(selectedIds);
+        }
     });
 }
 
