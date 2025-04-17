@@ -1010,10 +1010,14 @@ async function deployToPreprod() {
                 encoding: 'utf-8'
             });
 
-            // Include author in path if provided
+            // Replace spaces with underscores in lab and author names to avoid Killercoda errors
+            const sanitizedLabName = labName.replace(/\s+/g, '_');
+            const sanitizedAuthorName = authorName ? authorName.replace(/\s+/g, '_') : '';
+            
+            // Include author in path if provided but format it for Killercoda compatibility
             const filePath = authorName 
-                ? `docs/${labName} - ${authorName}/${path}`
-                : `docs/${labName}/${path}`;
+                ? `${sanitizedLabName}-${sanitizedAuthorName}/${path}`
+                : `${sanitizedLabName}/${path}`;
 
             return {
                 path: filePath,
@@ -1147,7 +1151,7 @@ async function addAuthorSignatureToFiles(authorName: string, selectedPaths?: str
     // Loop through selected files and add signature
     for (const [path, file] of filesToProcess) {
         // Skip directories and non-markdown files
-        if (file.isDirectory || !path.toLowerCase().endswith('.md')) {
+        if (file.isDirectory || !path.toLowerCase().endsWith('.md') || path.toLowerCase().endsWith('.txt')) {
             continue;
         }
         
