@@ -1,21 +1,22 @@
 ## Étape 3 : Gestion des services
 
-Vérifiez le statut du service SSH :
+Utilisons le service Cron comme exemple :
 
+Vérifiez le statut du service :
 ```bash
-systemctl status ssh
+systemctl status cron
 ```{{exec}}
 
-Redémarrez le service :
-
+Activez le service au démarrage :
 ```bash
-sudo systemctl restart ssh
+sudo systemctl enable cron
+```{{exec}}
+
+Démarrez le service :
+```bash
+sudo systemctl start cron
 ```{{exec}}
 
 **Exercice :**
-1. Activez le service SSH au démarrage
-2. Vérifiez qu'il est bien activé
-
-<div style="text-align: right; font-style: italic; margin-top: 30px;">
-by ouss
-</div>
+1. Activez et démarrez le service Cron
+2. Vérifiez qu'il est bien actif
