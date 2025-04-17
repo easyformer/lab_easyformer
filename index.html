@@ -1,43 +1,160 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown Editor & Deployer</title>
+    <title>Éditeur de Labs KillerCoda</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
     <div id="app">
         <header>
-            <h1>Markdown Editor</h1>
-            <button id="deployBtn">Deploy/Push to Pre-Prod</button>
+            <div class="header-title">
+                <img src="/assets/easy_logo.png" alt="EasyFormer Logo" class="header-logo">
+                <h1>Éditeur de Labs</h1>
+            </div>
+            <div class="header-actions">
+                <button id="historyBtn" title="Historique des révisions">📜</button>
+                <button id="downloadBtn" title="Télécharger en ZIP">📥</button>
+                <button id="settingsBtn" title="Paramètres">⚙️</button>
+                <button id="deployBtn">Envoyer</button>
+            </div>
         </header>
 
         <main class="editor-layout">
+            <!-- File Explorer -->
             <aside class="file-explorer">
-                <h2>Files</h2>
-                <!-- File list will be populated here -->
-                <ul id="fileList">
-                    <li>📄 README.md</li>
-                    <li>📄 another-doc.md</li>
-                    <li>📁 subfolder/</li>
-                </ul>
-                <button id="newFileBtn">New File</button>
+                <h2>Fichiers</h2>
+                <div class="file-actions">
+                    <button id="newFileBtn">Nouveau Fichier</button>
+                    <button id="newFolderBtn">Nouveau Dossier</button>
+                </div>
+                <div id="fileList" class="file-list"></div>
             </aside>
-
+            
+            <!-- Splitter for file explorer -->
+            <div id="splitter" class="splitter"></div>
+            
+            <!-- Editor Pane -->
             <section class="editor-pane">
-                <h2>Editor</h2>
-                <textarea id="markdownInput" placeholder="Enter your Markdown here..."></textarea>
+                <div class="pane-header">
+                    <h2>Éditeur</h2>
+                </div>
+                <textarea id="markdownInput" placeholder="Écrivez votre texte ici..."></textarea>
             </section>
 
+            <!-- Splitter for editor/preview -->
+            <div id="editorSplitter" class="splitter"></div>
+
+            <!-- Preview Pane -->
             <section class="preview-pane">
-                <h2>Preview</h2>
-                <div id="markdownPreview">
-                    <!-- Rendered Markdown will appear here -->
+                <div class="pane-header">
+                    <h2>Aperçu</h2>
+                    <div class="actions">
+                        <button id="togglePreviewBtn" title="Basculer l'affichage brut/formaté">🔄</button>
+                    </div>
                 </div>
+                <div id="markdownPreview"></div>
             </section>
         </main>
     </div>
+
+    <!-- Context Menu for Editor -->
+    <div id="editorContextMenu" class="context-menu" style="display: none;">
+        <div class="context-menu-section">Titres</div>
+        <div class="context-menu-item" data-action="h1"><span class="context-menu-icon">#</span> Titre 1</div>
+        <div class="context-menu-item" data-action="h2"><span class="context-menu-icon">##</span> Titre 2</div>
+        <div class="context-menu-item" data-action="h3"><span class="context-menu-icon">###</span> Titre 3</div>
+        
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-section">Texte</div>
+        <div class="context-menu-item" data-action="bold"><span class="context-menu-icon">B</span> Gras</div>
+        <div class="context-menu-item" data-action="italic"><span class="context-menu-icon">I</span> Italique</div>
+        <div class="context-menu-item" data-action="strike"><span class="context-menu-icon">S</span> Barré</div>
+        
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-section">Code</div>
+        <div class="context-menu-item" data-action="code"><span class="context-menu-icon">`</span> Inline Code</div>
+        <div class="context-menu-item" data-action="codeblock"><span class="context-menu-icon">```</span> Bloc de code</div>
+        <div class="context-menu-item" data-action="exec"><span class="context-menu-icon">⚡</span> Commande exécutable</div>
+        <div class="context-menu-item" data-action="copy"><span class="context-menu-icon">📋</span> Texte copiable</div>
+        
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-section">Listes</div>
+        <div class="context-menu-item" data-action="list"><span class="context-menu-icon">•</span> Liste à puces</div>
+        <div class="context-menu-item" data-action="ordered"><span class="context-menu-icon">1.</span> Liste numérotée</div>
+        <div class="context-menu-item" data-action="task"><span class="context-menu-icon">☐</span> Liste de tâches</div>
+        
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-section">Autres</div>
+        <div class="context-menu-item" data-action="quote"><span class="context-menu-icon">></span> Citation</div>
+        <div class="context-menu-item" data-action="link"><span class="context-menu-icon">🔗</span> Lien</div>
+        <div class="context-menu-item" data-action="image"><span class="context-menu-icon">🖼️</span> Image</div>
+        <div class="context-menu-item" data-action="table"><span class="context-menu-icon">📊</span> Tableau</div>
+    </div>
+
+    <!-- File context menu -->
+    <div id="fileContextMenu" class="context-menu">
+        <div class="context-menu-item" data-action="openFile">
+            <span class="icon">📄</span> Ouvrir
+        </div>
+        <div class="context-menu-item" data-action="downloadFile">
+            <span class="icon">💾</span> Télécharger
+        </div>
+        <div class="context-menu-item" data-action="renameFile">
+            <span class="icon">✏️</span> Renommer
+        </div>
+        <div class="context-menu-item" data-action="deleteFile">
+            <span class="icon">🗑️</span> Supprimer
+        </div>
+    </div>
+
+    <!-- Folder context menu -->
+    <div id="folderContextMenu" class="context-menu">
+        <div class="context-menu-item" data-action="newFileInFolder">
+            <span class="icon">📄</span> Nouveau fichier
+        </div>
+        <div class="context-menu-item" data-action="newFolderInFolder">
+            <span class="icon">📁</span> Nouveau dossier
+        </div>
+        <div class="context-menu-item" data-action="downloadFile">
+            <span class="icon">💾</span> Télécharger (ZIP)
+        </div>
+        <div class="context-menu-item" data-action="renameFolder">
+            <span class="icon">✏️</span> Renommer
+        </div>
+        <div class="context-menu-item" data-action="deleteFolder">
+            <span class="icon">🗑️</span> Supprimer
+        </div>
+    </div>
+
+    <!-- Settings Dialog -->
+    <div id="settingsDialog" class="settings-dialog" style="display: none;">
+        <div class="settings-content">
+            <h2>Paramètres</h2>
+            <div class="settings-section">
+                <h3>Apparence</h3>
+                <div class="setting-item">
+                    <label for="themeSelect">Thème</label>
+                    <select id="themeSelect">
+                        <option value="light">Clair</option>
+                        <option value="dark">Sombre</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h3>Éditeur</h3>
+                <div class="setting-item">
+                    <label for="autoDetectToggle">Détection automatique du markdown</label>
+                    <input type="checkbox" id="autoDetectToggle" checked>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button id="closeSettings">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

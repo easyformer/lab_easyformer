@@ -6,11 +6,31 @@
 }
 
 :root {
+    /* Light theme */
     --primary-color: #2196f3;
     --border-color: #e0e0e0;
     --background-light: #f5f5f5;
     --text-color: #333;
     --sidebar-width: 250px;
+    --editor-border: #ddd;
+    --background-main: white;
+    --background-code: #f0f0f0;
+    --background-pre: #f5f5f5;
+    --menu-hover: rgba(33, 150, 243, 0.1);
+    --menu-active: rgba(33, 150, 243, 0.2);
+}
+
+[data-theme="dark"] {
+    --primary-color: #64b5f6;
+    --border-color: #444;
+    --background-light: #2d2d2d;
+    --text-color: #eee;
+    --editor-border: #444;
+    --background-main: #1e1e1e;
+    --background-code: #2d2d2d;
+    --background-pre: #2d2d2d;
+    --menu-hover: rgba(100, 181, 246, 0.1);
+    --menu-active: rgba(100, 181, 246, 0.2);
 }
 
 body {
@@ -20,6 +40,7 @@ body {
     flex-direction: column;
     height: 100vh;
     line-height: 1.6;
+    background-color: var(--background-main);
 }
 
 #app {
@@ -34,9 +55,20 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background-color: white;
+    background-color: var(--background-main);
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-logo {
+    height: 32px;
+    width: auto;
 }
 
 header h1 {
@@ -45,12 +77,18 @@ header h1 {
     color: var(--primary-color);
 }
 
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
 /* Button Styles */
 button {
     padding: 0.5rem 1rem;
     border: 1px solid var(--primary-color);
     border-radius: 4px;
-    background-color: white;
+    background-color: var(--background-main);
     color: var(--primary-color);
     cursor: pointer;
     font-size: 0.9rem;
@@ -60,6 +98,11 @@ button {
 button:hover {
     background-color: var(--primary-color);
     color: white;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 #deployBtn {
@@ -76,6 +119,7 @@ button:hover {
     display: flex;
     flex: 1;
     overflow: hidden;
+    position: relative;
 }
 
 /* File Explorer */
@@ -83,39 +127,90 @@ button:hover {
     width: var(--sidebar-width);
     background-color: var(--background-light);
     border-right: 1px solid var(--border-color);
-    padding: 1rem;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .file-explorer h2 {
     font-size: 0.9rem;
     text-transform: uppercase;
-    color: #666;
-    margin-bottom: 1rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+    padding: 1rem 1rem 0.5rem 1rem;
 }
 
-#fileList {
-    list-style: none;
+.file-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0 1rem;
+}
+
+.file-list {
     flex: 1;
     overflow-y: auto;
+    padding: 0 1rem 1rem 1rem;
 }
 
-#fileList li {
-    padding: 0.5rem;
-    margin: 0.2rem 0;
+.nested {
+    margin-left: 0;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.folder-toggle {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
     cursor: pointer;
+    user-select: none;
+    font-family: monospace;
+}
+
+.folder-toggle-placeholder {
+    display: inline-block;
+    width: 20px;
+}
+
+.file-content {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 0;
+}
+
+.file-icon {
+    width: 20px;
+    text-align: center;
+}
+
+.drag-over {
+    background-color: var(--menu-hover);
+    border: 2px dashed var(--border-color);
     border-radius: 4px;
-    transition: background-color 0.2s ease;
 }
 
-#fileList li:hover {
-    background-color: rgba(33, 150, 243, 0.1);
+.file-item {
+    padding: 4px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
 }
 
-#fileList li.active {
-    background-color: rgba(33, 150, 243, 0.2);
-    font-weight: 500;
+.file-item:hover {
+    background-color: var(--menu-hover);
+}
+
+.file-item.active {
+    background-color: var(--selection-color);
+    color: var(--text-color-bright);
+}
+
+.file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Editor and Preview Panes */
@@ -125,16 +220,32 @@ button:hover {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background-color: var(--background-main);
+    position: relative;
 }
 
-.editor-pane h2,
-.preview-pane h2 {
+.editor-pane {
+    border-right: 1px solid var(--editor-border);
+}
+
+.pane-header {
     padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--background-light);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pane-header h2 {
     font-size: 0.9rem;
     font-weight: 500;
-    color: #666;
-    background-color: white;
-    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.pane-header .actions {
+    display: flex;
+    gap: 0.5rem;
 }
 
 #markdownInput {
@@ -147,13 +258,39 @@ button:hover {
     line-height: 1.6;
     tab-size: 2;
     outline: none;
+    background-color: var(--background-main);
+    color: var(--text-color);
 }
 
 #markdownPreview {
     flex: 1;
     padding: 2rem;
     overflow-y: auto;
-    background-color: white;
+    background-color: var(--background-main);
+    color: var(--text-color);
+}
+
+/* Splitter */
+.splitter {
+    width: 5px;
+    background-color: var(--editor-border);
+    cursor: col-resize;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 249px; /* Initial position at end of file explorer */
+    z-index: 10;
+}
+
+.vertical-splitter {
+    height: 5px;
+    background-color: var(--editor-border);
+    cursor: row-resize;
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Position will be dynamically set by JS */
+    z-index: 10;
 }
 
 /* Markdown Preview Styles */
@@ -177,7 +314,7 @@ button:hover {
 }
 
 #markdownPreview code {
-    background-color: #f0f0f0;
+    background-color: var(--background-code);
     padding: 0.2em 0.4em;
     border-radius: 3px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
@@ -185,11 +322,12 @@ button:hover {
 }
 
 #markdownPreview pre {
-    background-color: #f5f5f5;
+    background-color: var(--background-pre);
     padding: 1rem;
     border-radius: 4px;
     overflow-x: auto;
     margin: 1em 0;
+    border: 1px solid var(--editor-border);
 }
 
 #markdownPreview pre code {
@@ -200,13 +338,17 @@ button:hover {
 }
 
 /* KillerCoda specific styles */
-#markdownPreview pre[data-type="copy"],
-#markdownPreview pre[data-type="exec"] {
+.copy-block, .exec-block {
     position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin: 1em 0;
+    background-color: var(--background-pre);
+    overflow: hidden;
 }
 
-#markdownPreview pre[data-type="copy"]::after,
-#markdownPreview pre[data-type="exec"]::after {
+.copy-block::after,
+.exec-block::after {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -214,16 +356,386 @@ button:hover {
     border-radius: 3px;
     font-size: 0.8rem;
     font-weight: 500;
+    z-index: 5;
 }
 
-#markdownPreview pre[data-type="copy"]::after {
+.copy-block::after {
     content: "copy";
     background-color: #e3f2fd;
     color: #1976d2;
 }
 
-#markdownPreview pre[data-type="exec"]::after {
+.exec-block::after {
     content: "exec";
     background-color: #e8f5e9;
     color: #2e7d32;
+}
+
+.copy-block pre, .exec-block pre {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    padding-right: 3rem; /* Make room for the label */
+}
+
+/* Context Menu Improvements */
+.context-menu {
+    position: fixed;
+    background: var(--background-main);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.3rem 0;
+    min-width: 200px;
+    max-width: 280px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    font-size: 0.85rem;
+    overflow-y: auto;
+    max-height: 70vh;
+    overscroll-behavior: contain;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: background-color 0.15s;
+    white-space: nowrap;
+    min-height: 24px;
+}
+
+.context-menu-item:hover {
+    background-color: var(--menu-hover);
+}
+
+.context-menu-icon {
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0.25rem 0;
+    opacity: 0.8;
+}
+
+.context-menu-section {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.8rem 0.2rem;
+    text-transform: uppercase;
+    background-color: var(--background-secondary);
+}
+
+/* File Context Menu */
+.file-context-menu {
+    position: fixed;
+    background: var(--background-main);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem 0;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+}
+
+/* Settings Dialog */
+.settings-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.settings-content {
+    background: var(--background-main);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 500px;
+    width: 90%;
+}
+
+.settings-section {
+    margin-bottom: 1.5rem;
+}
+
+.settings-section h3 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.setting-item label {
+    color: var(--text-color);
+}
+
+/* Dialog Styles */
+.github-token-dialog,
+.lab-name-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.lab-name-dialog .dialog-content {
+    background: var(--background-main);
+    padding: 2rem;
+    border-radius: 8px;
+    min-width: 400px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.lab-name-dialog label {
+    display: block;
+    margin: 1rem 0 0.5rem;
+    color: var(--text-color);
+}
+
+.lab-name-dialog input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--background-main);
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.lab-name-dialog .dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.previous-labs-section {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.previous-lab-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.author-signature {
+    text-align: right;
+    font-style: italic;
+    margin-top: 30px;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.revision-history-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.revision-history-dialog .dialog-content {
+    background: var(--background-main);
+    padding: 2rem;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.revision-history-dialog h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.revision-list {
+    margin-bottom: 1.5rem;
+}
+
+.revision-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    background-color: var(--background-light);
+}
+
+.revision-item:hover {
+    background-color: var(--menu-hover);
+}
+
+.revision-item-info {
+    flex: 1;
+}
+
+.revision-item-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.revision-item-details {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.revision-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.revision-item-actions button {
+    padding: 0.4rem 0.8rem;
+    background-color: var(--background-main);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.revision-item-actions button:hover {
+    background-color: var(--menu-hover);
+}
+
+.revision-item-actions button.load-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.no-revisions {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.deploy-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.deploy-dialog .dialog-content {
+    background: var(--background-main);
+    padding: 2rem;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.deploy-dialog h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.file-selection-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem;
+}
+
+.file-selection-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.file-selection-item:last-child {
+    border-bottom: none;
+}
+
+.file-selection-item input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.file-selection-item label {
+    flex: 1;
+    cursor: pointer;
+}
+
+.file-selection-item.directory {
+    font-weight: bold;
+    background-color: var(--background-light);
+}
+
+.deploy-options {
+    margin-bottom: 1.5rem;
+}
+
+.deploy-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.deploy-buttons button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.deploy-buttons button.deploy-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.deploy-buttons button.cancel-btn {
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
 }
