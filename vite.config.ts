@@ -6,7 +6,7 @@ export default defineConfig({
     port: 3000,
     allowedHosts: [
       'localhost',
-      '*.ts.net' // Allow all Tailscale domains
+      'labgenerator.easyformer.fr'
     ]
   },
   envDir: '.',
