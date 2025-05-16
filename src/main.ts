@@ -1,9 +1,12 @@
 import { marked } from 'marked';
-import { Octokit } from 'octokit';
+import hljs from 'highlight.js';
+import { Octokit } from '@octokit/rest';
 import 'highlight.js/styles/github.css';
 import './style.css';
+// Import the new types (but we won't use them extensively yet)
+import { IndexJson, LabFiles, LabStepFile } from './types'; // Ensure types are imported
 
-// Initialize Octokit with environment variable token
+// --- Initialization ---
 const initOctokit = () => {
     const token = import.meta.env.VITE_GITHUB_TOKEN;
     if (!token) {
@@ -13,7 +16,7 @@ const initOctokit = () => {
     return new Octokit({ auth: token });
 };
 
-// Types
+// --- Types ---
 interface FileData {
     name: string;
     content: string;
@@ -26,7 +29,7 @@ interface UserSettings {
     autoDetect: boolean;
 }
 
-// State Management
+// --- State Management ---
 let files: Map<string, FileData> = new Map();
 let currentFile: string | null = null;
 let showRawMarkdown = false;
@@ -57,7 +60,7 @@ declare global {
     }
 }
 
-// DOM Elements
+// --- DOM Elements ---
 const markdownInput = document.getElementById('markdownInput') as HTMLTextAreaElement;
 const markdownPreview = document.getElementById('markdownPreview') as HTMLElement;
 const fileList = document.getElementById('fileList') as HTMLElement;
@@ -76,8 +79,9 @@ const autoDetectToggle = document.getElementById('autoDetectToggle') as HTMLInpu
 const splitter = document.getElementById('splitter') as HTMLElement;
 const editorSplitter = document.getElementById('editorSplitter') as HTMLElement;
 const historyBtn = document.getElementById('historyBtn') as HTMLButtonElement;
+const headerActionsContainer = document.querySelector('.header-actions'); // Use the correct selector for the header button container
 
-// Settings Management
+// --- Settings Management ---
 let settings: UserSettings = loadSettings();
 
 function loadSettings(): UserSettings {
@@ -99,7 +103,7 @@ function applySettings() {
     themeSelect.value = settings.theme;
 }
 
-// File Management
+// --- File Management ---
 function loadFromStorage() {
     const savedFiles = localStorage.getItem('files');
     if (savedFiles) {
@@ -553,7 +557,7 @@ function deleteFile(path: string) {
     updateFileList();
 }
 
-// Markdown Processing Functions
+// --- Markdown Processing Functions ---
 function detectMarkdown(text: string): string {
     if (!settings.autoDetect) return text;
 
@@ -646,7 +650,7 @@ async function updatePreview() {
     }
 }
 
-// Context Menu Functions
+// --- Context Menu Functions ---
 function showEditorContextMenu(e: MouseEvent) {
     e.preventDefault();
     hideAllContextMenus();
@@ -757,7 +761,7 @@ function handleFileAction(action: string) {
     contextMenuTarget = null;
 }
 
-// Layout Management
+// --- Layout Management ---
 function setupSplitters() {
     // File explorer splitter
     if (splitter) {
@@ -851,12 +855,12 @@ function setupSplitters() {
     }
 }
 
-// Window resize handling
+// --- Window resize handling ---
 window.addEventListener('resize', () => {
     setupSplitters();
 });
 
-// Download Function
+// --- Download Function ---
 function downloadFilesAsZip() {
     // Create a promise-based solution using script loading
     const loadJSZip = () => {
@@ -956,7 +960,7 @@ async function downloadFile(path: string) {
     }
 }
 
-// Deployment
+// --- Deployment ---
 async function deployToPreprod() {
     // Ensure Octokit is initialized with valid token
     if (!octokit) {
@@ -1167,7 +1171,7 @@ by ${authorName}
     }
     
     // Update current file in editor if it's a markdown file
-    if (currentFile && currentFile.toLowerCase().endsWith('.md') && markdownInput) {
+    if (currentFile && currentFile.toLowerCase().endswith('.md') && markdownInput) {
         markdownInput.value = files.get(currentFile)?.content || '';
         await updatePreview();
     }
@@ -1413,82 +1417,449 @@ async function showDeploymentFileSelection(_labName: string, _authorName: string
     });
 }
 
-// Event listeners
-markdownInput?.addEventListener('input', () => {
-    void updatePreview();
-});
+// --- UI Elements ---
+function setupEventListeners() {
+    markdownInput?.addEventListener('input', () => {
+        void updatePreview();
+    });
 
-markdownInput?.addEventListener('contextmenu', showEditorContextMenu);
+    markdownInput?.addEventListener('contextmenu', showEditorContextMenu);
 
-document.addEventListener('click', hideAllContextMenus);
+    document.addEventListener('click', hideAllContextMenus);
 
-contextMenu?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const menuItem = target.closest('.context-menu-item') as HTMLElement;
-    if (menuItem && menuItem.dataset.action) {
-        handleContextMenuAction(menuItem.dataset.action);
-        hideAllContextMenus();
+    contextMenu?.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const menuItem = target.closest('.context-menu-item') as HTMLElement;
+        if (menuItem && menuItem.dataset.action) {
+            handleContextMenuAction(menuItem.dataset.action);
+            hideAllContextMenus();
+        }
+        e.stopPropagation();
+    });
+
+    fileContextMenu?.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const menuItem = target.closest('.context-menu-item') as HTMLElement;
+        if (menuItem && menuItem.dataset.action) {
+            handleFileAction(menuItem.dataset.action);
+            hideAllContextMenus();
+        }
+        e.stopPropagation();
+    });
+
+    folderContextMenu?.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const menuItem = target.closest('.context-menu-item') as HTMLElement;
+        if (menuItem && menuItem.dataset.action) {
+            handleFileAction(menuItem.dataset.action);
+            hideAllContextMenus();
+        }
+        e.stopPropagation();
+    });
+
+    newFileBtn?.addEventListener('click', () => createNewFile());
+    newFolderBtn?.addEventListener('click', () => createNewFolder());
+    deployBtn?.addEventListener('click', deployToPreprod);
+    downloadBtn?.addEventListener('click', downloadFilesAsZip);
+    historyBtn?.addEventListener('click', showRevisionHistory);
+
+    togglePreviewBtn?.addEventListener('click', () => {
+        showRawMarkdown = !showRawMarkdown;
+        updatePreview();
+    });
+
+    settingsBtn?.addEventListener('click', () => {
+        if (settingsDialog) {
+            settingsDialog.style.display = 'block';
+        }
+    });
+
+    document.getElementById('closeSettings')?.addEventListener('click', () => {
+        if (settingsDialog) {
+            settingsDialog.style.display = 'none';
+        }
+    });
+
+    themeSelect?.addEventListener('change', () => {
+        settings.theme = themeSelect.value as 'light' | 'dark';
+        saveSettings();
+    });
+
+    autoDetectToggle?.addEventListener('change', () => {
+        settings.autoDetect = autoDetectToggle.checked;
+        saveSettings();
+        updatePreview();
+    });
+
+    historyBtn?.addEventListener('click', showRevisionHistory);
+
+    // Add button to header actions container
+    if (headerActionsContainer) {
+        const generateIndexJsonButton = document.createElement('button');
+        generateIndexJsonButton.id = 'generateIndexJsonButton';
+        generateIndexJsonButton.className = 'action-button';
+        generateIndexJsonButton.title = 'Generate index.json';
+        generateIndexJsonButton.textContent = '👉';
+        generateIndexJsonButton.addEventListener('click', showIndexJsonGenerator);
+
+        // Insert before the settings button
+        const settingsBtn = document.getElementById('settingsBtn');
+        if (settingsBtn) {
+            headerActionsContainer.insertBefore(generateIndexJsonButton, settingsBtn);
+        } else {
+            headerActionsContainer.appendChild(generateIndexJsonButton);
+        }
     }
-    e.stopPropagation();
-});
+}
 
-fileContextMenu?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const menuItem = target.closest('.context-menu-item') as HTMLElement;
-    if (menuItem && menuItem.dataset.action) {
-        handleFileAction(menuItem.dataset.action);
-        hideAllContextMenus();
+// --- Index.json Generator Logic ---
+
+// Function to scan workspace for lab files (Revised Logic)
+function scanLabFiles(): LabFiles {
+    const result: LabFiles = { steps: [] };
+    const stepFolders = new Map<string, LabStepFile>(); // Map step folder *path* to step data
+    let potentialLabRoot = ''; // Detect if files are inside a single top-level folder
+
+    const rootEntries = Array.from(files.keys()).filter(p => !p.includes('/'));
+    const rootFolders = Array.from(files.entries()).filter(([p, f]) => f.isDirectory && !p.includes('/'));
+
+    // If there's exactly one root folder, assume it's the lab root
+    if (rootFolders.length === 1 && rootEntries.length === 1) {
+        potentialLabRoot = rootFolders[0][0] + '/';
     }
-    e.stopPropagation();
-});
 
-folderContextMenu?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const menuItem = target.closest('.context-menu-item') as HTMLElement;
-    if (menuItem && menuItem.dataset.action) {
-        handleFileAction(menuItem.dataset.action);
-        hideAllContextMenus();
+    console.log(`Scanning files, potential lab root: '${potentialLabRoot}'`);
+
+    for (const [path, fileData] of files.entries()) {
+        const relativePath = path.startsWith(potentialLabRoot) ? path.substring(potentialLabRoot.length) : path;
+        const lowerRelativePath = relativePath.toLowerCase();
+        const parts = relativePath.split('/');
+        const fileName = parts[parts.length - 1].toLowerCase();
+        const dirName = parts.length > 1 ? parts[parts.length - 2] : ''; // Immediate parent folder name
+
+        // Check for root-level files (relative to potential lab root)
+        if (!fileData.isDirectory && parts.length === 1) {
+            if (fileName === 'intro.md') {
+                result.introFile = path; // Store full path
+            } else if (fileName === 'setup.sh') {
+                result.setupFile = path;
+            } else if (fileName === 'finish.md') {
+                result.finishFile = path;
+            }
+        }
+        // Check for step folders and files within them
+        else if (parts.length === 2 && !fileData.isDirectory) {
+            const stepFolderName = parts[0];
+            const stepFileName = fileName;
+            const stepMatch = stepFolderName.match(/^(step|etape)s?[-_]?(\d+)$/i);
+
+            if (stepMatch) {
+                const stepFolderPath = potentialLabRoot + stepFolderName; // Full path to step folder
+                if (!stepFolders.has(stepFolderPath)) {
+                    // Ensure the folder actually exists in the files map
+                    if (files.has(stepFolderPath) && files.get(stepFolderPath)?.isDirectory) {
+                         stepFolders.set(stepFolderPath, { folder: stepFolderPath });
+                    } else if (files.has(stepFolderName) && files.get(stepFolderName)?.isDirectory && potentialLabRoot === '') {
+                         // Handle case where step folder is at root
+                         stepFolders.set(stepFolderName, { folder: stepFolderName });
+                    }
+                }
+
+                // Use the correct key (full path or root name)
+                const mapKey = files.has(stepFolderPath) ? stepFolderPath : (files.has(stepFolderName) ? stepFolderName : null);
+
+                if (mapKey && stepFolders.has(mapKey)) {
+                    const step = stepFolders.get(mapKey)!;
+                    if (stepFileName === 'text.md' || stepFileName === 'texte.md') {
+                        step.textFile = path; // Store full path
+                    } else if (stepFileName === 'verify.sh' || stepFileName === 'verification.sh') {
+                        step.verifyFile = path; // Store full path
+                    }
+                }
+            }
+        }
     }
-    e.stopPropagation();
-});
 
-newFileBtn?.addEventListener('click', () => createNewFile());
-newFolderBtn?.addEventListener('click', () => createNewFolder());
-deployBtn?.addEventListener('click', deployToPreprod);
-downloadBtn?.addEventListener('click', downloadFilesAsZip);
-historyBtn?.addEventListener('click', showRevisionHistory);
+    // Convert map to array and sort steps numerically
+    result.steps = Array.from(stepFolders.values()).sort((a, b) => {
+        // Extract number from the folder *name* (not the full path)
+        const folderNameA = a.folder.split('/').pop() || '';
+        const folderNameB = b.folder.split('/').pop() || '';
+        const numA = parseInt(folderNameA.match(/\d+$/)?.[0] || '0');
+        const numB = parseInt(folderNameB.match(/\d+$/)?.[0] || '0');
+        return numA - numB;
+    });
 
-togglePreviewBtn?.addEventListener('click', () => {
-    showRawMarkdown = !showRawMarkdown;
-    updatePreview();
-});
+    console.log('Scan results:', result);
+    return result;
+}
 
-settingsBtn?.addEventListener('click', () => {
-    if (settingsDialog) {
-        settingsDialog.style.display = 'block';
+// Function to show the index.json generator dialog
+function showIndexJsonGenerator() {
+    const labFiles = scanLabFiles();
+    const dialog = document.createElement('div');
+    dialog.id = 'indexJsonGeneratorDialog';
+    dialog.className = 'modal-dialog'; // Use a consistent class for modals
+
+    const existingIndexJson = files.get('index.json');
+    let existingConfig: Partial<IndexJson> = {};
+    if (existingIndexJson && !existingIndexJson.isDirectory) {
+        try {
+            existingConfig = JSON.parse(existingIndexJson.content);
+        } catch (e) {
+            console.error('Failed to parse existing index.json:', e);
+            alert('Error: Could not parse existing index.json. Please check its format.');
+            // Reset config to avoid using corrupted data
+            existingConfig = {};
+        }
     }
-});
 
-document.getElementById('closeSettings')?.addEventListener('click', () => {
-    if (settingsDialog) {
-        settingsDialog.style.display = 'none';
+    // --- Generate Dialog HTML (using helper functions) ---
+    dialog.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Generate index.json</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="indexJsonForm">
+                    <div class="form-group">
+                        <label for="labTitle">Lab Title:</label>
+                        <input type="text" id="labTitle" value="${existingConfig.title || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="labDescription">Description:</label>
+                        <textarea id="labDescription" rows="3" required>${existingConfig.description || ''}</textarea>
+                    </div>
+
+                    ${generateIntroSectionHtml(labFiles, existingConfig)}
+                    ${generateStepsSectionHtml(labFiles, existingConfig)}
+                    ${generateFinishSectionHtml(labFiles, existingConfig)}
+                    ${generateBackendSectionHtml(existingConfig)}
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn">Cancel</button>
+                <button type="button" class="generate-btn">${existingIndexJson ? 'Update' : 'Generate'}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(dialog);
+    attachGeneratorEventListeners(dialog, labFiles, !!existingIndexJson);
+}
+
+// --- Helper functions for generating dialog sections ---
+
+function generateIntroSectionHtml(labFiles: LabFiles, config: Partial<IndexJson>): string {
+    // Check existing config safely
+    const introChecked = !!config.details?.intro?.text;
+    const setupChecked = !!config.details?.intro?.background;
+
+    return `
+        <fieldset class="form-group">
+            <legend>Introduction</legend>
+            ${labFiles.introFile ? `
+                <div class="sub-group">
+                    <label>
+                        <input type="checkbox" id="useIntro" ${introChecked ? 'checked' : ''}>
+                        Use Intro File: <code>${labFiles.introFile}</code>
+                    </label>
+                </div>` : '<p>No intro.md found.</p>'}
+            ${labFiles.setupFile ? `
+                <div class="sub-group">
+                    <label>
+                        <input type="checkbox" id="useSetup" ${setupChecked ? 'checked' : ''}>
+                        Use Setup Script: <code>${labFiles.setupFile}</code> (as background)
+                    </label>
+                </div>` : '<p>No setup.sh found.</p>'}
+        </fieldset>
+    `;
+}
+
+function generateStepsSectionHtml(labFiles: LabFiles, config: Partial<IndexJson>): string {
+    if (labFiles.steps.length === 0) {
+        return '<fieldset class="form-group"><legend>Steps</legend><p>No step folders (e.g., step1, etape2) found.</p></fieldset>';
     }
-});
+    return `
+        <fieldset class="form-group">
+            <legend>Steps</legend>
+            ${labFiles.steps.map((step, index) => {
+                // Check existing config safely
+                const existingStep = config.details?.steps?.[index];
+                const title = existingStep?.title || `Step ${index + 1}`;
+                const textChecked = !!existingStep?.text;
+                const verifyChecked = !!existingStep?.verify;
+                return `
+                    <div class="step-group" data-step-index="${index}">
+                        <h4>Step ${index + 1} (Folder: <code>${step.folder}</code>)</h4>
+                        <div class="sub-group">
+                            <label for="stepTitle${index}">Step Title:</label>
+                            <input type="text" id="stepTitle${index}" value="${title}" required>
+                        </div>
+                        ${step.textFile ? `
+                            <div class="sub-group">
+                                <label>
+                                    <input type="checkbox" id="stepText${index}" ${textChecked ? 'checked' : ''}>
+                                    Use Text File: <code>${step.textFile}</code>
+                                </label>
+                            </div>
+                        ` : '<p>No text.md/texte.md found.</p>'}
+                        ${step.verifyFile ? `
+                            <div class="sub-group">
+                                <label>
+                                    <input type="checkbox" id="stepVerify${index}" ${verifyChecked ? 'checked' : ''}>
+                                    Use Verify Script: <code>${step.verifyFile}</code>
+                                </label>
+                            </div>
+                        ` : '<p>No verify.sh/verification.sh found.</p>'}
+                    </div>
+                `;
+            }).join('')}
+        </fieldset>
+    `;
+}
 
-themeSelect?.addEventListener('change', () => {
-    settings.theme = themeSelect.value as 'light' | 'dark';
-    saveSettings();
-});
+function generateFinishSectionHtml(labFiles: LabFiles, config: Partial<IndexJson>): string {
+    const finishChecked = !!config.details?.finish?.text;
+    return `
+        <fieldset class="form-group">
+            <legend>Finish</legend>
+            ${labFiles.finishFile ? `
+                <div class="sub-group">
+                    <label>
+                        <input type="checkbox" id="useFinish" ${finishChecked ? 'checked' : ''}>
+                        Use Finish File: <code>${labFiles.finishFile}</code>
+                    </label>
+                </div>
+            ` : '<p>No finish.md found.</p>'}
+        </fieldset>
+    `;
+}
 
-autoDetectToggle?.addEventListener('change', () => {
-    settings.autoDetect = autoDetectToggle.checked;
-    saveSettings();
-    updatePreview();
-});
+function generateBackendSectionHtml(config: Partial<IndexJson>): string {
+    const environments = ['ubuntu', 'kubernetes-kubeadm-1node', 'kubernetes-kubeadm-2nodes', 'docker', 'centos', 'openshift']; // Add more as needed
+    const currentEnv = config.backend?.imageid || 'ubuntu';
+    return `
+        <fieldset class="form-group">
+            <legend>Backend Environment</legend>
+            <label for="backendEnv">Image ID:</label>
+            <select id="backendEnv" required>
+                ${environments.map(env => `
+                    <option value="${env}" ${currentEnv === env ? 'selected' : ''}>${env}</option>
+                `).join('')}
+            </select>
+        </fieldset>
+    `;
+}
 
-historyBtn?.addEventListener('click', showRevisionHistory);
+// --- Function to attach event listeners to the dialog ---
+function attachGeneratorEventListeners(dialog: HTMLElement, labFiles: LabFiles, isUpdate: boolean) {
+    const closeButton = dialog.querySelector('.close-btn');
+    const cancelButton = dialog.querySelector('.cancel-btn');
+    const generateButton = dialog.querySelector('.generate-btn');
+    const form = dialog.querySelector('#indexJsonForm') as HTMLFormElement;
 
-// Initialize
-initializeFiles();
-applySettings();
+    closeButton?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+    });
+
+    cancelButton?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+    });
+
+    generateButton?.addEventListener('click', () => {
+        if (!form.checkValidity()) {
+            form.reportValidity(); // Show browser validation errors
+            return;
+        }
+
+        // Collect data from form
+        const labTitle = (form.querySelector('#labTitle') as HTMLInputElement).value;
+        const labDescription = (form.querySelector('#labDescription') as HTMLTextAreaElement).value;
+        const useIntro = (form.querySelector('#useIntro') as HTMLInputElement)?.checked ?? false;
+        const useSetup = (form.querySelector('#useSetup') as HTMLInputElement)?.checked ?? false;
+        const useFinish = (form.querySelector('#useFinish') as HTMLInputElement)?.checked ?? false;
+        const backendEnv = (form.querySelector('#backendEnv') as HTMLSelectElement).value;
+
+        const stepsData = labFiles.steps.map((step, index) => {
+            const title = (form.querySelector(`#stepTitle${index}`) as HTMLInputElement).value;
+            const useText = (form.querySelector(`#stepText${index}`) as HTMLInputElement)?.checked ?? false;
+            const useVerify = (form.querySelector(`#stepVerify${index}`) as HTMLInputElement)?.checked ?? false;
+            return {
+                title,
+                text: useText && step.textFile ? step.textFile : undefined,
+                verify: useVerify && step.verifyFile ? step.verifyFile : undefined
+            };
+        }).filter(step => step.title && (step.text || step.verify)); // Only include steps with a title and text/verify
+
+        // Build index.json object
+        const indexJsonContent: IndexJson = {
+            title: labTitle,
+            description: labDescription,
+            details: {
+                intro: useIntro && labFiles.introFile ? {
+                    text: labFiles.introFile,
+                    background: useSetup && labFiles.setupFile ? labFiles.setupFile : undefined
+                } : undefined,
+                steps: stepsData,
+                finish: useFinish && labFiles.finishFile ? {
+                    text: labFiles.finishFile
+                } : undefined
+            },
+            backend: {
+                imageid: backendEnv
+            }
+        };
+
+        // Format JSON
+        const content = JSON.stringify(indexJsonContent, null, 2); // Pretty print
+
+        // Save or Update
+        const updateOrCreateFile = () => {
+            files.set('index.json', {
+                name: 'index.json',
+                content: content,
+                isDirectory: false,
+                path: 'index.json'
+            });
+            saveToStorage(); // Use the correct save function name
+            updateFileList();
+            if (currentFile === 'index.json') {
+                loadFile('index.json'); // Refresh editor if index.json is open
+            }
+            document.body.removeChild(dialog); // Close dialog on success
+        };
+
+        if (isUpdate) {
+            if (confirm('index.json already exists. Do you want to overwrite it with the generated content?')) {
+                updateOrCreateFile();
+            }
+        } else {
+            updateOrCreateFile();
+        }
+    });
+}
+
+// --- Start the application ---
+function initializeApp() {
+    // Correct function name: loadFromStorage instead of loadFilesFromLocalStorage
+    loadFromStorage();
+    updateFileList();
+    setupEventListeners(); // Button setup happens here
+    setupSplitters();
+    applySettings(); // Apply loaded settings
+
+    // Load last opened file or default
+    const lastFile = localStorage.getItem('lastOpenFile'); // Check if this key is correct
+    if (lastFile && files.has(lastFile)) {
+        loadFile(lastFile);
+    } else if (files.size > 0) {
+        // Load the first file if no last file is stored
+        loadFile(files.keys().next().value);
+    }
+}
+
+initializeApp();
 loadPreviousSubmissions(); // Load revision history on startup

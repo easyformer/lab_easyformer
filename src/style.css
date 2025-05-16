@@ -739,3 +739,264 @@ button:disabled {
     background-color: var(--background-light);
     border: 1px solid var(--border-color);
 }
+
+/* --- Tooltip Styles (for action buttons) --- */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: var(--vscode-editorHoverWidget-background, black);
+  color: var(--vscode-editorHoverWidget-foreground, #fff);
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position the tooltip above the button */
+  left: 50%;
+  margin-left: -60px; /* Use half of the width to center */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* --- Modal Dialog Styles --- */
+.modal-dialog {
+    display: block; /* Shown via JS */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Darker overlay */
+    padding-top: 50px; /* Location of the box */
+}
+
+.modal-content {
+    background-color: var(--vscode-editorWidget-background, #fefefe);
+    color: var(--vscode-editorWidget-foreground, #333);
+    margin: auto;
+    padding: 0; /* Remove padding, header/footer/body will handle it */
+    border: 1px solid var(--vscode-editorWidget-border, #ccc);
+    width: 80%;
+    max-width: 750px; /* Slightly wider max width */
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    animation-name: animatetop;
+    animation-duration: 0.4s
+}
+
+/* Add Animation */
+@keyframes animatetop {
+    from {top: -300px; opacity: 0}
+    to {top: 0; opacity: 1}
+}
+
+.modal-header {
+    padding: 12px 18px;
+    background-color: var(--vscode-titleBar-activeBackground, #3c3c3c);
+    color: var(--vscode-titleBar-activeForeground, white);
+    border-bottom: 1px solid var(--vscode-editorWidget-border, #ddd);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.close-btn {
+    color: var(--vscode-titleBar-inactiveForeground, #ccc);
+    font-size: 28px;
+    font-weight: bold;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: var(--vscode-titleBar-activeForeground, white);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 18px 20px;
+    max-height: 65vh; /* Limit height and make scrollable */
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 12px 18px;
+    background-color: var(--vscode-editorWidget-background, #f1f1f1);
+    color: var(--vscode-editorWidget-foreground, #333);
+    border-top: 1px solid var(--vscode-editorWidget-border, #ddd);
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    text-align: right;
+}
+
+.modal-footer button {
+    padding: 8px 18px;
+    margin-left: 10px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.modal-footer .cancel-btn {
+    background-color: var(--vscode-button-secondaryBackground, #6c757d);
+    color: var(--vscode-button-secondaryForeground, white);
+}
+.modal-footer .cancel-btn:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground, #5a6268);
+}
+
+.modal-footer .generate-btn {
+    background-color: var(--vscode-button-background, #007acc);
+    color: var(--vscode-button-foreground, white);
+}
+.modal-footer .generate-btn:hover {
+    background-color: var(--vscode-button-hoverBackground, #005a9e);
+}
+
+
+/* Form Styles within Modal */
+#indexJsonForm .form-group,
+#indexJsonForm fieldset.form-group {
+    margin-bottom: 18px;
+    padding: 12px 15px;
+    border: 1px solid var(--vscode-input-border, #ccc);
+    border-radius: 4px;
+    background-color: var(--vscode-sideBar-background, #f8f8f8); /* Slightly different background */
+}
+
+#indexJsonForm fieldset.form-group {
+    padding-top: 15px; /* More padding for fieldsets */
+}
+
+#indexJsonForm legend {
+    font-weight: 600; /* Bolder legend */
+    margin-bottom: 12px;
+    padding: 0 8px;
+    width: auto; /* Fit content */
+    border-bottom: none; /* Remove default fieldset border */
+    font-size: 1.1em;
+}
+
+
+#indexJsonForm label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+#indexJsonForm input[type="text"],
+#indexJsonForm textarea,
+#indexJsonForm select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--vscode-input-border, #ccc);
+    background-color: var(--vscode-input-background, #fff);
+    color: var(--vscode-input-foreground, #000);
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
+    font-size: 1em;
+}
+
+#indexJsonForm textarea {
+    resize: vertical; /* Allow vertical resizing */
+    min-height: 60px;
+}
+
+#indexJsonForm input[type="checkbox"] {
+    margin-right: 8px;
+    vertical-align: middle;
+    width: 16px; /* Slightly larger checkbox */
+    height: 16px;
+}
+
+#indexJsonForm .sub-group {
+    margin-left: 18px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 12px;
+    border-left: 2px solid var(--vscode-inputOption-activeBorder, #007acc);
+}
+
+#indexJsonForm .step-group {
+    margin-bottom: 18px;
+    padding: 15px;
+    border: 1px dashed var(--vscode-editorWidget-border, #ddd);
+    border-radius: 4px;
+    background-color: var(--vscode-editorWidget-background, #fff); /* White background for steps */
+}
+#indexJsonForm .step-group h4 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--vscode-editorWidget-border, #eee);
+    padding-bottom: 8px;
+    font-size: 1.15em;
+    color: var(--vscode-editorWidget-foreground, #333);
+}
+
+#indexJsonForm code {
+    background-color: var(--vscode-textCodeBlock-background, #e0e0e0);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.95em;
+}
+
+#indexJsonForm p {
+    font-style: italic;
+    color: var(--vscode-descriptionForeground, #777);
+    margin: 5px 0 10px 0;
+}
+
+/* --- Header Toolbar Button Styles --- */
+.header-actions .action-button {
+    background: none;
+    border: none;
+    /* Force a specific dark color to test visibility */
+    color: #444444 !important; /* Use !important to override potential conflicts */
+    font-size: 1.4em; /* Adjust icon size if needed */
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    vertical-align: middle; /* Align button vertically */
+    line-height: 1; /* Ensure icon vertical alignment */
+    transition: background-color 0.2s ease-in-out;
+}
+
+.header-actions .action-button:hover {
+    background-color: rgba(90, 93, 94, 0.31); /* Keep a simple hover effect */
+    color: #222222 !important; /* Darken on hover */
+}
+
+/* Ensure Font Awesome icons render correctly inside buttons */
+/* ... existing Font Awesome rules ... */
+
+/* Specific style for the generate button if needed */
+#generateIndexJsonButton {
+    /* Add specific styles here if needed */
+}
